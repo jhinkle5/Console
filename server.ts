@@ -81,23 +81,24 @@ If WoL does not wake the machine within 60s, access the remote IPMI/BMC power co
         lower.includes("storage") ||
         lower.includes("space")
       ) {
-        return `### 💾 Storage Alert: **Workstation Disk G: (94.3% Capacity)**
+        return `### 💾 Storage Alert: **Workstation /data (94.3% Capacity)**
 
 **Root Cause Analysis:**
-Disk \`G:\` has only **5.7%** free headroom remaining. Docker WSL2 sparse VHDX growth and legacy Ollama model cache blobs are the primary consumers.
+Ubuntu Workstation \`/data\` NVMe mount has only **5.7%** free headroom remaining. Docker container build cache, dangling image layers, and systemd journal logs are the primary consumers.
 
 **Remediation Commands:**
-\`\`\`powershell
-# Windows PowerShell (Run as Administrator)
-# 1. Clean Docker WSL2 virtual disk reclaim
-wsl --shutdown
-Optimize-VHD -Path "G:\\WSL\\ext4.vhdx" -Mode Full
+\`\`\`bash
+# 1. Clean Docker system cache, images, and unused volumes
+docker system prune -af --volumes
 
-# 2. Clear stale Ollama temp blobs
-Remove-Item -Path "G:\\.ollama\\models\\blobs\\*.tmp" -Force
+# 2. Vacuum systemd journal logs older than 3 days
+sudo journalctl --vacuum-time=3d
 
-# 3. Trim shadow copies
-vssadmin resize shadowstorage /for=G: /on=G: /maxsize=5GB
+# 3. Clean apt cache packages
+sudo apt-get clean && sudo apt-get autoremove -y
+
+# 4. Inspect largest directories in /data
+sudo du -h --max-depth=1 /data | sort -hr | head -n 10
 \`\`\`
 
 **Expected Headroom Reclaimed:** ~34.8 GB`;
@@ -157,8 +158,8 @@ You monitor a multi-node home lab cluster consisting of:
 - hub (openSUSE Leap 16.1, 56 cores, NVIDIA RTX 4090 24GB, running Ollama, WhisperX, Immich, Docker)
 - server-01 (Ubuntu 26.04 LTS, 2 cores, 3 pending package updates)
 - server-02 (OFFLINE, SSH connection failed at 10.0.0.12, network or power issue)
-- workstation (Windows 11 Pro, 16 cores, Disk G: at 94.3% capacity)
-- vm-01 (Windows 10 Education, 2 cores, running background builds)
+- workstation (Ubuntu 24.04 LTS, 16 cores, NVIDIA RTX 3080 10GB, /data mount at 94.3% capacity)
+- vm-01 (BlackArch Linux, 2 cores, security audit and penetration testing VM)
 
 Current Context:
 ${hostContext ? JSON.stringify(hostContext, null, 2) : "All fleet nodes operational except server-02 (offline) and workstation (disk alert)."}
@@ -235,9 +236,9 @@ app.post("/api/gemini/diagnostics", async (req, res) => {
             id: "anom-2",
             host: "workstation",
             severity: "warning",
-            title: "Disk G: Exceeding 90% Threshold",
-            description: "Current capacity 94.3%. Write bottlenecks predicted.",
-            remediation: "Execute disk cleanup script or migrate Ollama weights.",
+            title: "/data Exceeding 90% Threshold",
+            description: "Current capacity 94.3% on Ubuntu workstation. Write bottlenecks predicted.",
+            remediation: "Execute docker system prune -af --volumes and vacuum journalctl.",
           },
           {
             id: "anom-3",

@@ -34,7 +34,7 @@ I am continuously monitoring your HomeLab fleet (5 nodes, 1 NVIDIA RTX 4090 GPU,
 **Current Fleet Verdict:**
 - **Health Score:** 92 / 100
 - **🚨 1 Host Offline:** \`server-02\` (10.0.0.12)
-- **⚠️ 1 Storage Warning:** \`workstation\` Disk G: at 94.3%
+- **⚠️ 1 Storage Warning:** \`workstation\` /data at 94.3%
 - **ℹ️ 3 Updates Pending:** \`server-01\` (Ubuntu 26.04 LTS)
 
 How can I assist your infrastructure today? You can choose a quick action below or ask me any custom query.`,
@@ -200,10 +200,10 @@ Processed query: "${textToSend}".
           🚨 Diagnose server-02
         </button>
         <button
-          onClick={() => handleSendMessage('Generate disk cleanup script for Workstation Disk G at 94.3%')}
+          onClick={() => handleSendMessage('Generate disk cleanup script for Workstation /data at 94.3%')}
           className="bg-zinc-900 hover:bg-zinc-800 text-amber-300 border border-amber-900/50 px-2.5 py-1 rounded-lg whitespace-nowrap transition font-medium"
         >
-          💾 Clean Disk G:
+          💾 Clean /data
         </button>
         <button
           onClick={() => handleSendMessage('Analyze my GPU burn rate and suggest power efficiency optimizations for WhisperX')}

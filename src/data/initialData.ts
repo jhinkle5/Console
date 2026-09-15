@@ -74,7 +74,7 @@ export const INITIAL_HOSTS: HostNode[] = [
     isHub: false,
     status: 'warning',
     hasGpu: true,
-    os: 'Microsoft Windows 11 Pro',
+    os: 'Ubuntu 24.04 LTS',
     cpuPercent: 4,
     ramPercent: 75,
     diskPercent: 94.3,
@@ -100,7 +100,7 @@ export const INITIAL_HOSTS: HostNode[] = [
     isHub: false,
     status: 'online',
     hasGpu: false,
-    os: 'Microsoft Windows 10 Education',
+    os: 'BlackArch Linux',
     cpuPercent: 24,
     ramPercent: 29,
     diskPercent: 48.5,
@@ -142,12 +142,12 @@ export const INITIAL_EVENTS: EventInsight[] = [
   {
     id: 'evt-2',
     type: 'warning',
-    title: 'workstation disk G: at 94.3%',
+    title: 'workstation /data at 94.3%',
     description: 'Worth a clean-up before writes start failing.',
     timestamp: '42 mins ago',
     hostId: 'workstation',
-    actionCommand: 'wsl --shutdown && Optimize-VHD -Path "G:\\WSL\\ext4.vhdx" -Mode Full',
-    actionLabel: 'Reclaim 34.8 GB Virtual Disk Space',
+    actionCommand: 'docker system prune -af --volumes && sudo journalctl --vacuum-time=3d',
+    actionLabel: 'Reclaim 34.8 GB Docker & Journal Space',
   },
   {
     id: 'evt-3',
@@ -399,7 +399,7 @@ export const INITIAL_SERVICES: SystemdService[] = [
 export const INITIAL_DISKS: DiskMount[] = [
   { device: '/dev/nvme0n1p2', mountPoint: '/', filesystem: 'btrfs', sizeGb: 2000, usedGb: 1540, freeGb: 460, percent: 77, smartStatus: 'PASSED', wearPercent: 4 },
   { device: '/dev/sda1', mountPoint: '/mnt/storage', filesystem: 'zfs', sizeGb: 16000, usedGb: 8940, freeGb: 7060, percent: 55.8, smartStatus: 'PASSED', wearPercent: 1 },
-  { device: 'workstation:G:', mountPoint: 'G:\\ (workstation)', filesystem: 'NTFS', sizeGb: 2000, usedGb: 1886, freeGb: 114, percent: 94.3, smartStatus: 'WARNING', wearPercent: 18 },
+  { device: 'workstation:/dev/nvme1n1p1', mountPoint: '/data (workstation)', filesystem: 'ext4', sizeGb: 2000, usedGb: 1886, freeGb: 114, percent: 94.3, smartStatus: 'WARNING', wearPercent: 18 },
   { device: 'server-01:/dev/sda2', mountPoint: '/ (server-01)', filesystem: 'ext4', sizeGb: 500, usedGb: 413, freeGb: 87, percent: 82.7, smartStatus: 'PASSED', wearPercent: 8 },
 ];
 
