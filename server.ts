@@ -155,7 +155,7 @@ docker update --restart=on-failure:3 whisperx
 
     const systemInstruction = `You are "LabSentinel AI", an autonomous HomeLab Guardian and DevOps Site Reliability Engineering agent.
 You monitor a multi-node home lab cluster consisting of:
-- hub (openSUSE Leap 16.1, 56 cores, NVIDIA RTX 4090 24GB, running Ollama, WhisperX, Immich, Docker)
+- hub (openSUSE Leap 16.1, 56 cores, NVIDIA RTX 4090 24GB, running IBM watsonx Orchestrate Granite 4.2 [18GB VRAM], DeepSeek-R1, WhisperX, Immich, Docker)
 - server-01 (Ubuntu 26.04 LTS, 2 cores, 3 pending package updates)
 - server-02 (OFFLINE, SSH connection failed at 10.0.0.12, network or power issue)
 - workstation (Ubuntu 24.04 LTS, 16 cores, NVIDIA RTX 3080 10GB, /data mount at 94.3% capacity)

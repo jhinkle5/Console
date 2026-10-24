@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { HostNode, EventInsight, AIAgentMessage } from '../types';
 import confetti from 'canvas-confetti';
+import { Mic, MicOff } from 'lucide-react';
 
 interface AIAgentGuardianProps {
   id?: string;
@@ -48,8 +49,80 @@ How can I assist your infrastructure today? You can choose a quick action below 
   const [autonomousMode, setAutonomousMode] = useState(true);
   const [executingCommand, setExecutingCommand] = useState<string | null>(null);
   const [terminalOutput, setTerminalOutput] = useState<{ [key: string]: string }>({});
+  const [isListening, setIsListening] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(false);
+  const recognitionRef = useRef<any>(null);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // Initialize Web Speech API for voice talk
+  useEffect(() => {
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (SpeechRecognition) {
+      setSpeechSupported(true);
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onresult = (event: any) => {
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        setInputPrompt(transcript);
+      };
+
+      recognition.onerror = (event: any) => {
+        console.warn('Speech recognition error:', event.error);
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+    } else {
+      setSpeechSupported(false);
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.abort();
+        } catch {
+          // ignore
+        }
+      }
+    };
+  }, []);
+
+  const toggleVoiceInput = () => {
+    if (!speechSupported) {
+      alert('Speech recognition is not supported in this browser or iframe. Please type your query.');
+      return;
+    }
+
+    if (isListening) {
+      try {
+        recognitionRef.current?.stop();
+      } catch {
+        // ignore
+      }
+      setIsListening(false);
+    } else {
+      try {
+        recognitionRef.current?.start();
+        setIsListening(true);
+      } catch (err) {
+        console.warn('Could not start speech recognition:', err);
+        setIsListening(false);
+      }
+    }
+  };
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -291,18 +364,57 @@ Processed query: "${textToSend}".
 
       {/* Input Form */}
       <div className="p-4 bg-zinc-950 border-t border-zinc-800">
+        {isListening && (
+          <div className="mb-2 flex items-center justify-between px-3 py-1.5 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs font-mono animate-pulse">
+            <span className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
+              <span>Listening to your voice... Speak your question</span>
+            </span>
+            <button
+              type="button"
+              onClick={toggleVoiceInput}
+              className="text-[10px] text-rose-300 hover:underline cursor-pointer"
+            >
+              Stop
+            </button>
+          </div>
+        )}
         <form
           onSubmit={(e) => {
             e.preventDefault();
+            if (isListening) {
+              try {
+                recognitionRef.current?.stop();
+              } catch {}
+              setIsListening(false);
+            }
             handleSendMessage();
           }}
           className="flex items-center gap-2"
         >
+          <button
+            type="button"
+            onClick={toggleVoiceInput}
+            title={
+              speechSupported
+                ? isListening
+                  ? 'Stop listening'
+                  : 'Talk to AI using voice'
+                : 'Speech recognition not supported in this browser'
+            }
+            className={`p-2.5 rounded-xl border text-xs transition flex items-center justify-center shrink-0 cursor-pointer ${
+              isListening
+                ? 'bg-rose-600 text-white border-rose-500 shadow-[0_0_12px_rgba(225,29,72,0.6)] animate-pulse'
+                : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700 hover:bg-zinc-800'
+            }`}
+          >
+            {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+          </button>
           <input
             type="text"
             value={inputPrompt}
             onChange={(e) => setInputPrompt(e.target.value)}
-            placeholder="Ask AI Guardian (e.g. 'Why is server-02 offline?', 'Fix disk space')..."
+            placeholder={isListening ? 'Listening to voice...' : "Ask AI Guardian (e.g. 'Why is server-02 offline?', 'Fix disk space')..."}
             className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-blue-500 transition"
           />
           <button

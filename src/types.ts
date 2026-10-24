@@ -10,6 +10,7 @@ export type ViewTab =
   | 'disks'
   | 'network'
   | 'security'
+  | 'autonomous-agents'
   | 'ai-models'
   | 'experiments'
   | 'ai-agent'
@@ -143,7 +144,7 @@ export interface DiskMount {
 export interface AIModelInstance {
   id: string;
   name: string;
-  engine: 'Ollama' | 'vLLM' | 'WhisperX' | 'Immich-ML' | 'LocalAI';
+  engine: 'Ollama' | 'vLLM' | 'WhisperX' | 'Immich-ML' | 'LocalAI' | 'watsonx' | string;
   parameters: string;
   vramUsedMb: number;
   quantization: string;
@@ -151,4 +152,40 @@ export interface AIModelInstance {
   tokensPerSec: number;
   status: 'loaded' | 'idle' | 'offloaded';
   requests24h: number;
+}
+
+export type AutonomyLevel = 'full' | 'supervised' | 'observer';
+
+export interface AgentExecutionLog {
+  id: string;
+  timestamp: string;
+  level: 'info' | 'warning' | 'action' | 'success';
+  message: string;
+  toolUsed?: string;
+  latencyMs?: number;
+}
+
+export interface AutonomousAgent {
+  id: string;
+  name: string;
+  role: string;
+  category: 'sre' | 'security' | 'vram' | 'storage' | 'energy' | 'containers' | 'network';
+  avatarIcon: string;
+  model: string;
+  autonomyLevel: AutonomyLevel;
+  status: 'active' | 'executing' | 'idle' | 'paused';
+  healthScore: number;
+  intervalSec: number;
+  lastCycle: string;
+  nextCycle: string;
+  currentGoal: string;
+  tasksCompleted: number;
+  uptime: string;
+  tools: string[];
+  recentLogs: AgentExecutionLog[];
+  metrics: {
+    cpuCostPercent: number;
+    ramMb: number;
+    successRate: number;
+  };
 }

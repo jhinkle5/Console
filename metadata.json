@@ -1,6 +1,6 @@
 {
   "name": "HomeLab Monitor",
   "description": "Next-generation home lab telemetry console and fleet monitoring dashboard featuring autonomous AI agent monitoring, GPU thermals, power burn rates, container health, and intelligent remediation.",
-  "requestFramePermissions": [],
+  "requestFramePermissions": ["microphone"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

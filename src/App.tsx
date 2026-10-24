@@ -15,6 +15,7 @@ import { ContainersModal } from './components/ContainersModal';
 import { ServicesModal } from './components/ServicesModal';
 import { HostDetailModal } from './components/HostDetailModal';
 import { AIModelsTab } from './components/AIModelsTab';
+import { AutonomousAgentsTab } from './components/AutonomousAgentsTab';
 
 import {
   INITIAL_HOSTS,
@@ -25,8 +26,9 @@ import {
   INITIAL_CONTAINERS,
   INITIAL_SERVICES,
   INITIAL_AI_MODELS,
+  INITIAL_AUTONOMOUS_AGENTS,
 } from './data/initialData';
-import { ViewTab, HostNode, EventInsight } from './types';
+import { ViewTab, HostNode, EventInsight, AutonomousAgent } from './types';
 
 export default function App() {
   // Navigation & View State
@@ -48,6 +50,7 @@ export default function App() {
   const [services] = useState(INITIAL_SERVICES);
   const [diagnostics] = useState(INITIAL_DIAGNOSTICS);
   const [aiModels] = useState(INITIAL_AI_MODELS);
+  const [autonomousAgents, setAutonomousAgents] = useState<AutonomousAgent[]>(INITIAL_AUTONOMOUS_AGENTS);
 
   // Time filters & Auto refresh
   const [timeRange, setTimeRange] = useState('6h');
@@ -183,8 +186,15 @@ export default function App() {
 
         {/* Scrollable Dashboard Body */}
         <main className="flex-1 overflow-y-auto p-4 md:p-5 custom-scrollbar space-y-4">
-          {/* If Dedicated AI Models tab is chosen in sidebar */}
-          {activeTab === 'ai-models' || activeTab === 'experiments' ? (
+          {/* If Dedicated Autonomous Agents Swarm tab is chosen in sidebar */}
+          {activeTab === 'autonomous-agents' ? (
+            <AutonomousAgentsTab
+              id="autonomous-agents-view"
+              agents={autonomousAgents}
+              onUpdateAgents={setAutonomousAgents}
+              onOpenGuardianDrawer={() => setIsAiAgentOpen(true)}
+            />
+          ) : activeTab === 'ai-models' || activeTab === 'experiments' ? (
             <AIModelsTab
               id="ai-models-view"
               models={aiModels}

@@ -65,7 +65,7 @@ export const AIModelsTab: React.FC<AIModelsTabProps> = ({
             <div className="flex items-center gap-2">
               <h2 className="text-base font-bold text-[#fafafa] font-sans">NVIDIA RTX 4090 24GB AI Fleet</h2>
               <span className="bg-blue-950/70 text-blue-400 text-[10px] font-mono px-2 py-0.5 rounded-full border border-blue-800/60 font-bold">
-                CUDA 12.6 · Ollama & WhisperX
+                CUDA 12.6 · watsonx, Ollama & WhisperX
               </span>
             </div>
             <p className="text-xs text-zinc-400 font-mono mt-0.5">
@@ -169,7 +169,11 @@ export const AIModelsTab: React.FC<AIModelsTabProps> = ({
                 <span className="text-blue-400 font-mono font-bold">{selectedModel.name}</span>
               </div>
               <span className="text-[11px] font-mono text-zinc-500 bg-zinc-900 px-2.5 py-0.5 rounded-full border border-zinc-800">
-                Live Ollama Bridge
+                {selectedModel.engine === 'watsonx'
+                  ? 'IBM watsonx Bridge'
+                  : selectedModel.engine === 'WhisperX'
+                  ? 'WhisperX Audio Pipeline'
+                  : 'Live Ollama Bridge'}
               </span>
             </div>
 
@@ -220,7 +224,11 @@ export const AIModelsTab: React.FC<AIModelsTabProps> = ({
           </div>
 
           <div className="text-[11px] font-mono text-zinc-500 mt-4 pt-3 border-t border-zinc-800/60">
-            Ollama endpoint reachable on host network <code className="text-zinc-400 bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-800">http://10.0.0.2:11434</code>
+            {selectedModel.engine === 'watsonx' ? (
+              <span>watsonx runtime agent active on cluster · 18.0 GB VRAM allocated on RTX 4090</span>
+            ) : (
+              <span>Ollama endpoint reachable on host network <code className="text-zinc-400 bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-800">http://10.0.0.2:11434</code></span>
+            )}
           </div>
         </div>
       </div>
