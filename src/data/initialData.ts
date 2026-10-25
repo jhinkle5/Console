@@ -3,7 +3,7 @@ import { HostNode, MetricTimeSeriesPoint, EventInsight, CostConsumer, ContainerI
 export const INITIAL_HOSTS: HostNode[] = [
   {
     id: 'hub',
-    name: ' (Command Hub)',
+    name: 'Command Hub',
     isHub: true,
     status: 'online',
     hasGpu: true,
