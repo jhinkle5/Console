@@ -127,6 +127,11 @@ export default function App() {
     ]);
   };
 
+  const handleUpdateHost = (updatedHost: HostNode) => {
+    setHosts((prev) => prev.map((h) => (h.id === updatedHost.id ? updatedHost : h)));
+    setInspectingHost(updatedHost);
+  };
+
   const handleAskAIWithEvent = (evt: EventInsight) => {
     setIsAiAgentOpen(true);
   };
@@ -336,6 +341,7 @@ export default function App() {
         isOpen={inspectingHost !== null}
         onClose={() => setInspectingHost(null)}
         host={inspectingHost}
+        onUpdateHost={handleUpdateHost}
         onTriggerAction={(action) => {
           if (action.includes('server-02')) {
             handleRecoverHost('server-02');
