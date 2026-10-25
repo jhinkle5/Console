@@ -18,6 +18,21 @@ export type ViewTab =
   | 'settings'
   | 'backup';
 
+export interface GpuDevice {
+  id: string;
+  name: string;
+  model: string;
+  vramUsedMb: number;
+  vramTotalMb: number;
+  tempC: number;
+  powerW: number;
+  utilPercent: number;
+  pcieSlot?: string;
+  driverVersion?: string;
+  activeWorkload?: string;
+  clockMhz?: number;
+}
+
 export interface HostNode {
   id: string;
   name: string;
@@ -47,6 +62,7 @@ export interface HostNode {
   gpuTempC?: number;
   gpuPowerW?: number;
   gpuUtilPercent?: number;
+  gpus?: GpuDevice[];
 }
 
 export interface MetricTimeSeriesPoint {
@@ -57,6 +73,9 @@ export interface MetricTimeSeriesPoint {
   tempC: number;
   cpuUtil: number;
   ramUtil: number;
+  gpu1Util?: number;
+  gpu1PowerW?: number;
+  gpu1TempC?: number;
 }
 
 export interface EventInsight {
@@ -152,6 +171,7 @@ export interface AIModelInstance {
   tokensPerSec: number;
   status: 'loaded' | 'idle' | 'offloaded';
   requests24h: number;
+  assignedGpu?: string;
 }
 
 export type AutonomyLevel = 'full' | 'supervised' | 'observer';

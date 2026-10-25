@@ -15,6 +15,7 @@ export const GpuChart: React.FC<GpuChartProps> = ({
   timeRange = 'last 6h',
 }) => {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+  const [selectedGpu, setSelectedGpu] = useState<0 | 1>(0);
   const [showUtil, setShowUtil] = useState(true);
   const [showPower, setShowPower] = useState(true);
   const [showTemp, setShowTemp] = useState(true);
@@ -31,7 +32,7 @@ export const GpuChart: React.FC<GpuChartProps> = ({
 
   // Max values for scaling
   const maxUtil = 100;
-  const maxPower = 100; // max watts scale
+  const maxPower = selectedGpu === 0 ? 250 : 150; // max watts scale
   const maxTemp = 80;   // max temp scale
 
   const getX = (index: number) => {
@@ -43,18 +44,30 @@ export const GpuChart: React.FC<GpuChartProps> = ({
   const getYPower = (val: number) => padTop + chartH - (Math.min(maxPower, Math.max(0, val)) / maxPower) * chartH;
   const getYTemp = (val: number) => padTop + chartH - (Math.min(maxTemp, Math.max(0, val)) / maxTemp) * chartH;
 
-  const createSvgPath = (getYFn: (v: number) => number, key: 'gpuUtil' | 'powerW' | 'tempC') => {
+  const getMetricVal = (point: MetricTimeSeriesPoint, metric: 'util' | 'power' | 'temp') => {
+    if (selectedGpu === 0) {
+      if (metric === 'util') return point.gpuUtil;
+      if (metric === 'power') return point.powerW;
+      return point.tempC;
+    } else {
+      if (metric === 'util') return point.gpu1Util ?? 6;
+      if (metric === 'power') return point.gpu1PowerW ?? 26;
+      return point.gpu1TempC ?? 36;
+    }
+  };
+
+  const createSvgPath = (getYFn: (v: number) => number, metric: 'util' | 'power' | 'temp') => {
     if (data.length === 0) return '';
     return data.reduce((acc, point, idx) => {
       const x = getX(idx);
-      const y = getYFn(point[key]);
+      const y = getYFn(getMetricVal(point, metric));
       return idx === 0 ? `M ${x} ${y}` : `${acc} L ${x} ${y}`;
     }, '');
   };
 
-  const pathUtil = createSvgPath(getYUtil, 'gpuUtil');
-  const pathPower = createSvgPath(getYPower, 'powerW');
-  const pathTemp = createSvgPath(getYTemp, 'tempC');
+  const pathUtil = createSvgPath(getYUtil, 'util');
+  const pathPower = createSvgPath(getYPower, 'power');
+  const pathTemp = createSvgPath(getYTemp, 'temp');
 
   const hoveredPoint = hoveredIdx !== null ? data[hoveredIdx] : null;
 
@@ -64,7 +77,7 @@ export const GpuChart: React.FC<GpuChartProps> = ({
 
       {/* Header */}
       <div className="flex items-center justify-between mb-3 text-xs flex-wrap gap-2">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <svg className="w-4 h-4 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M3 3v18h18" />
             <path d="M7 16l4-8 4 4 5-9" />
@@ -74,6 +87,33 @@ export const GpuChart: React.FC<GpuChartProps> = ({
           <span className="bg-zinc-800 text-blue-400 font-mono text-[10px] px-2 py-0.5 rounded-md uppercase font-bold border border-zinc-700/60">
             {hostName}
           </span>
+
+          {/* Dual GPU Selector Pills */}
+          <div className="flex items-center gap-1 bg-zinc-950/80 p-0.5 rounded-lg border border-zinc-800 font-mono text-[10px]">
+            <button
+              onClick={() => setSelectedGpu(0)}
+              className={`px-2 py-0.5 rounded transition ${
+                selectedGpu === 0
+                  ? 'bg-blue-600 text-white font-bold shadow-sm'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              GPU 0: RTX 4090 24GB
+            </button>
+            <button
+              onClick={() => setSelectedGpu(1)}
+              className={`px-2 py-0.5 rounded transition flex items-center gap-1 ${
+                selectedGpu === 1
+                  ? 'bg-emerald-600 text-white font-bold shadow-sm'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              <span>GPU 1: RTX 5080 16GB</span>
+              <span className="bg-emerald-400/20 text-emerald-300 text-[8px] px-1 py-0.2 rounded font-bold uppercase">
+                New
+              </span>
+            </button>
+          </div>
         </div>
 
         <div className="flex items-center gap-3">
@@ -210,7 +250,7 @@ export const GpuChart: React.FC<GpuChartProps> = ({
               {showUtil && (
                 <circle
                   cx={getX(hoveredIdx)}
-                  cy={getYUtil(hoveredPoint.gpuUtil)}
+                  cy={getYUtil(getMetricVal(hoveredPoint, 'util'))}
                   r="4.5"
                   fill="#38bdf8"
                   stroke="#09090b"
@@ -220,7 +260,7 @@ export const GpuChart: React.FC<GpuChartProps> = ({
               {showPower && (
                 <circle
                   cx={getX(hoveredIdx)}
-                  cy={getYPower(hoveredPoint.powerW)}
+                  cy={getYPower(getMetricVal(hoveredPoint, 'power'))}
                   r="4.5"
                   fill="#f59e0b"
                   stroke="#09090b"
@@ -230,7 +270,7 @@ export const GpuChart: React.FC<GpuChartProps> = ({
               {showTemp && (
                 <circle
                   cx={getX(hoveredIdx)}
-                  cy={getYTemp(hoveredPoint.tempC)}
+                  cy={getYTemp(getMetricVal(hoveredPoint, 'temp'))}
                   r="4.5"
                   fill="#ec4899"
                   stroke="#09090b"
@@ -286,21 +326,24 @@ export const GpuChart: React.FC<GpuChartProps> = ({
               left: `${Math.min(80, Math.max(10, (hoveredIdx / (data.length - 1)) * 85))}%`,
             }}
           >
-            <div className="text-zinc-400 font-mono text-[10px] mb-1 font-bold">
-              Timestamp: {hoveredPoint.time}
+            <div className="flex items-center justify-between gap-4 text-zinc-400 font-mono text-[10px] mb-1 font-bold">
+              <span>{hoveredPoint.time}</span>
+              <span className={selectedGpu === 0 ? 'text-blue-400' : 'text-emerald-400'}>
+                {selectedGpu === 0 ? 'RTX 4090 24GB' : 'RTX 5080 16GB'}
+              </span>
             </div>
             <div className="grid grid-cols-3 gap-3 font-mono text-[11px]">
               <div className="text-sky-400">
                 <span className="text-zinc-500 block text-[9px] font-bold">UTIL</span>
-                {hoveredPoint.gpuUtil}%
+                {getMetricVal(hoveredPoint, 'util')}%
               </div>
               <div className="text-amber-400">
                 <span className="text-zinc-500 block text-[9px] font-bold">POWER</span>
-                {hoveredPoint.powerW} W
+                {getMetricVal(hoveredPoint, 'power')} W
               </div>
               <div className="text-pink-400">
                 <span className="text-zinc-500 block text-[9px] font-bold">TEMP</span>
-                {hoveredPoint.tempC}°C
+                {getMetricVal(hoveredPoint, 'temp')}°C
               </div>
             </div>
           </div>

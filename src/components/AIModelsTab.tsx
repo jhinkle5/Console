@@ -62,35 +62,49 @@ export const AIModelsTab: React.FC<AIModelsTabProps> = ({
             </svg>
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-base font-bold text-[#fafafa] font-sans">NVIDIA RTX 4090 24GB AI Fleet</h2>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-base font-bold text-[#fafafa] font-sans">
+                {gpuHost.gpus && gpuHost.gpus.length > 1
+                  ? 'NVIDIA Dual-GPU AI Cluster: RTX 4090 24GB + RTX 5080 16GB'
+                  : `${gpuHost.gpuName || 'NVIDIA RTX 4090 24GB'} AI Fleet`}
+              </h2>
               <span className="bg-blue-950/70 text-blue-400 text-[10px] font-mono px-2 py-0.5 rounded-full border border-blue-800/60 font-bold">
-                CUDA 12.6 · watsonx, Ollama & WhisperX
+                CUDA 12.8 · 40 GB VRAM Pool · watsonx & Ollama
               </span>
             </div>
             <p className="text-xs text-zinc-400 font-mono mt-0.5">
-              Host: {gpuHost.name} ({gpuHost.ip}) · Power: {gpuHost.powerWatts || 37}W · Temp: {gpuHost.gpuTempC || 40}°C
+              Host: {gpuHost.name} ({gpuHost.ip}) · {gpuHost.gpus?.length || 2} GPUs Installed · Total Capacity: {(vramCapacity / 1024).toFixed(0)} GB VRAM
             </p>
           </div>
         </div>
 
         {/* VRAM Bar */}
-        <div className="w-full md:w-64 flex flex-col gap-1.5 text-xs font-mono">
+        <div className="w-full md:w-80 flex flex-col gap-1.5 text-xs font-mono">
           <div className="flex items-center justify-between text-zinc-400">
-            <span>VRAM Allocation</span>
+            <span>Cluster VRAM Allocation</span>
             <span className="text-[#fafafa] font-bold">
               {(totalVramUsed / 1024).toFixed(1)} GB / {(vramCapacity / 1024).toFixed(1)} GB
             </span>
           </div>
-          <div className="h-2 bg-zinc-800 rounded-full overflow-hidden flex">
+          <div className="h-2.5 bg-zinc-800 rounded-full overflow-hidden flex">
+            {/* GPU 0: RTX 4090 share */}
             <div
-              className="bg-blue-500 rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]"
-              style={{ width: `${(totalVramUsed / vramCapacity) * 100}%` }}
+              className="bg-blue-500 transition-all duration-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]"
+              style={{ width: `${(18432 / vramCapacity) * 100}%` }}
+              title="GPU 0 (RTX 4090): 18.0 GB"
+            />
+            {/* GPU 1: RTX 5080 share */}
+            <div
+              className="bg-emerald-500 transition-all duration-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]"
+              style={{ width: `${((totalVramUsed - 18432) / vramCapacity) * 100}%` }}
+              title="GPU 1 (RTX 5080): 13.15 GB"
             />
           </div>
-          <span className="text-[10px] text-zinc-500 text-right">
-            {((vramCapacity - totalVramUsed) / 1024).toFixed(1)} GB free headroom
-          </span>
+          <div className="flex items-center justify-between text-[10px] text-zinc-400 font-mono">
+            <span className="text-blue-400">● GPU 0 (4090): 18.0/24 GB</span>
+            <span className="text-emerald-400">● GPU 1 (5080): 13.2/16 GB</span>
+            <span className="text-zinc-400">{((vramCapacity - totalVramUsed) / 1024).toFixed(1)} GB free</span>
+          </div>
         </div>
       </div>
 
@@ -98,14 +112,16 @@ export const AIModelsTab: React.FC<AIModelsTabProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Model Cards */}
         <div className="lg:col-span-6 flex flex-col gap-3">
-          <div className="text-xs font-mono font-bold tracking-wider text-zinc-500 uppercase">
-            ACTIVE AI WORKLOADS & LOCAL MODELS
+          <div className="flex items-center justify-between text-xs font-mono font-bold tracking-wider text-zinc-500 uppercase">
+            <span>ACTIVE AI WORKLOADS & LOCAL MODELS</span>
+            <span className="text-blue-400 normal-case font-normal">Dual GPU Offloaded</span>
           </div>
 
           <div className="grid grid-cols-1 gap-3">
             {models.map((model) => {
               const isSelected = selectedModel.id === model.id;
               const isLoaded = model.status === 'loaded';
+              const isGpu0 = model.assignedGpu?.includes('4090') || model.id === 'mod-granite';
 
               return (
                 <div
@@ -117,7 +133,7 @@ export const AIModelsTab: React.FC<AIModelsTabProps> = ({
                       : 'border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900/60'
                   }`}
                 >
-                  <div className="flex items-center justify-between mb-2.5">
+                  <div className="flex items-center justify-between mb-2.5 flex-wrap gap-2">
                     <div className="flex items-center gap-2">
                       <span
                         className={`w-2 h-2 rounded-full ${
@@ -130,9 +146,21 @@ export const AIModelsTab: React.FC<AIModelsTabProps> = ({
                       </span>
                     </div>
 
-                    <span className="text-xs font-mono font-bold text-blue-400">
-                      {(model.vramUsedMb / 1024).toFixed(1)} GB VRAM
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {/* Assigned GPU Badge */}
+                      <span
+                        className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-md border ${
+                          isGpu0
+                            ? 'bg-blue-950/70 text-blue-400 border-blue-800/60'
+                            : 'bg-emerald-950/70 text-emerald-400 border-emerald-800/60'
+                        }`}
+                      >
+                        {model.assignedGpu || (isGpu0 ? 'GPU 0 · RTX 4090 24GB' : 'GPU 1 · RTX 5080 16GB')}
+                      </span>
+                      <span className="text-xs font-mono font-bold text-zinc-200">
+                        {(model.vramUsedMb / 1024).toFixed(1)} GB VRAM
+                      </span>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-3 gap-2 text-[11px] font-mono text-zinc-400 bg-zinc-950/60 p-2.5 rounded-xl border border-zinc-800/80">

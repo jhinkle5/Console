@@ -83,7 +83,7 @@ export const FleetList: React.FC<FleetListProps> = ({
                   {/* GPU Badge */}
                   {host.hasGpu && (
                     <span className="bg-amber-950/60 text-amber-400 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border border-amber-800/50">
-                      GPU
+                      {host.gpus && host.gpus.length > 1 ? `${host.gpus.length}x GPU` : 'GPU'}
                     </span>
                   )}
 

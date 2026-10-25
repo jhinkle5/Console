@@ -27,12 +27,21 @@ export const LabEngineCard: React.FC<LabEngineCardProps> = ({
       )
     : selectedHost.gpuUtilPercent ?? 0;
 
+  const totalFleetGpuCount = fleetHosts.reduce(
+    (acc, h) => acc + (h.gpus?.length || (h.hasGpu ? 1 : 0)),
+    0
+  );
+
   const gpuSubtext = isFleet
-    ? `${fleetHosts.filter((h) => h.hasGpu).length} GPUs Active · Cluster avg`
+    ? `${totalFleetGpuCount} GPUs Active (RTX 4090, RTX 5080, RTX 3080) · Cluster avg`
     : selectedHost.hasGpu
-    ? `${selectedHost.gpuVramUsedMb || 844} MB / ${(
-        (selectedHost.gpuVramTotalMb || 24576) / 1024
-      ).toFixed(1)} GB • ${selectedHost.gpuTempC || 40}°C`
+    ? selectedHost.gpus && selectedHost.gpus.length > 1
+      ? `${((selectedHost.gpuVramUsedMb || 19276) / 1024).toFixed(1)} GB / ${(
+          (selectedHost.gpuVramTotalMb || 40960) / 1024
+        ).toFixed(0)} GB · 2x GPUs (${selectedHost.gpus.map((g) => g.model).join(', ')})`
+      : `${selectedHost.gpuVramUsedMb || 844} MB / ${(
+          (selectedHost.gpuVramTotalMb || 24576) / 1024
+        ).toFixed(1)} GB • ${selectedHost.gpuTempC || 40}°C`
     : 'No discrete GPU detected';
 
   const cpuVal = isFleet

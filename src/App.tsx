@@ -110,7 +110,7 @@ export default function App() {
     setHosts((prev) =>
       prev.map((h) =>
         h.id === 'hub'
-          ? { ...h, gpuUtilPercent: 94, gpuTempC: 68, powerWatts: 285 }
+          ? { ...h, gpuUtilPercent: 94, gpuTempC: 68, gpuPowerW: 285 }
           : h
       )
     );
@@ -118,11 +118,15 @@ export default function App() {
       ...prev,
       {
         time: '18:10',
-        utilization: 94,
-        powerWatts: 285,
+        rawTimestamp: 11,
+        gpuUtil: 94,
+        powerW: 285,
         tempC: 68,
-        vramUsedMb: 18400,
-        activeWorkload: 'whisperx (batch transcribing 4 files)',
+        cpuUtil: 28,
+        ramUtil: 36,
+        gpu1Util: 18,
+        gpu1PowerW: 48,
+        gpu1TempC: 41,
       },
     ]);
   };

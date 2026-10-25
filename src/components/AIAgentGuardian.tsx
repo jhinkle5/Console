@@ -30,13 +30,14 @@ export const AIAgentGuardian: React.FC<AIAgentGuardianProps> = ({
       sender: 'agent',
       text: `### 🛡️ LabSentinel Autonomous Guardian Active
 
-I am continuously monitoring your HomeLab fleet (5 nodes, 1 NVIDIA RTX 4090 GPU, 39 Docker containers).
+I am continuously monitoring your HomeLab fleet (4 nodes, 3 NVIDIA GPUs: RTX 4090 24GB + RTX 5080 16GB on Ubuntu 26.04 LTS Hub, RTX 3080 on Workstation, 39 Docker containers).
 
 **Current Fleet Verdict:**
-- **Health Score:** 92 / 100
+- **Health Score:** 94 / 100
 - **🚨 1 Host Offline:** \`server-02\` (10.0.0.12)
 - **⚠️ 1 Storage Warning:** \`workstation\` /data at 94.3%
-- **ℹ️ 3 Updates Pending:** \`server-01\` (Ubuntu 26.04 LTS)
+- **ℹ️ 3 Updates Pending:** \`hub\` (Ubuntu 26.04 LTS)
+- **⚡ AI Cluster:** Dual GPUs (RTX 4090 + RTX 5080) active with 40 GB combined VRAM
 
 How can I assist your infrastructure today? You can choose a quick action below or ask me any custom query.`,
       timestamp: 'Just now',

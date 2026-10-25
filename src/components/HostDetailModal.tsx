@@ -25,6 +25,7 @@ export const HostDetailModal: React.FC<HostDetailModalProps> = ({
   const [editStatus, setEditStatus] = useState<'online' | 'offline' | 'warning' | 'degraded'>('online');
   const [editCores, setEditCores] = useState(4);
   const [editHasGpu, setEditHasGpu] = useState(false);
+  const [editGpuName, setEditGpuName] = useState('');
 
   useEffect(() => {
     if (host) {
@@ -34,6 +35,7 @@ export const HostDetailModal: React.FC<HostDetailModalProps> = ({
       setEditStatus(host.status);
       setEditCores(host.cores);
       setEditHasGpu(host.hasGpu);
+      setEditGpuName(host.gpuName || '');
       setIsEditing(false);
     }
   }, [host]);
@@ -52,6 +54,7 @@ export const HostDetailModal: React.FC<HostDetailModalProps> = ({
       status: editStatus,
       cores: editCores,
       hasGpu: editHasGpu,
+      gpuName: editGpuName.trim() || host.gpuName,
     };
 
     onUpdateHost?.(updated);
@@ -222,6 +225,21 @@ export const HostDetailModal: React.FC<HostDetailModalProps> = ({
                   </label>
                 </div>
               </div>
+
+              {editHasGpu && (
+                <div>
+                  <label className="block text-zinc-400 text-[11px] mb-1 font-semibold uppercase">
+                    GPU Model / Name
+                  </label>
+                  <input
+                    type="text"
+                    value={editGpuName}
+                    onChange={(e) => setEditGpuName(e.target.value)}
+                    className="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-100 text-sm focus:outline-none focus:border-blue-500 transition"
+                    placeholder="e.g. NVIDIA RTX 4090 24GB + RTX 5080 16GB"
+                  />
+                </div>
+              )}
             </div>
 
             <div className="flex items-center justify-end gap-3 pt-2">
@@ -286,31 +304,109 @@ export const HostDetailModal: React.FC<HostDetailModalProps> = ({
               </div>
             </div>
 
-            {/* GPU Details if present */}
+            {/* GPU Details: Multiple GPUs or Single GPU */}
             {host.hasGpu && (
-              <div className="bg-zinc-900/50 p-4 rounded-2xl border border-blue-900/40 space-y-2.5 backdrop-blur-md">
-                <div className="flex items-center justify-between">
-                  <span className="text-blue-400 font-bold uppercase tracking-wider text-[11px]">
-                    NVIDIA GPU Telemetry
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-xs font-mono">
+                  <span className="text-blue-400 font-bold uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+                    NVIDIA GPU Telemetry ({host.gpus?.length || 1} Device{host.gpus && host.gpus.length > 1 ? 's' : ''})
                   </span>
-                  <span className="text-zinc-300 font-medium">{host.gpuName || 'GeForce RTX 4090'}</span>
+                  <span className="text-zinc-400 text-[11px]">
+                    Total VRAM: {((host.gpuVramTotalMb || 24576) / 1024).toFixed(0)} GB
+                  </span>
                 </div>
-                <div className="grid grid-cols-3 gap-2 pt-1 text-zinc-300 bg-zinc-950/60 p-3 rounded-xl border border-zinc-800/80">
-                  <div>
-                    <span className="text-zinc-500 block text-[9px] font-bold">VRAM USAGE</span>
-                    <span className="text-zinc-200">
-                      {host.gpuVramUsedMb || 844} MB / {host.gpuVramTotalMb || 24576} MB
-                    </span>
+
+                {host.gpus && host.gpus.length > 0 ? (
+                  host.gpus.map((gpu, idx) => (
+                    <div
+                      key={gpu.id || idx}
+                      className="bg-zinc-900/50 p-4 rounded-2xl border border-blue-900/40 space-y-2.5 backdrop-blur-md"
+                    >
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`font-mono text-[10px] font-bold px-2 py-0.5 rounded border ${
+                              idx === 0
+                                ? 'bg-blue-950/70 text-blue-400 border-blue-800/60'
+                                : 'bg-emerald-950/70 text-emerald-400 border-emerald-800/60'
+                            }`}
+                          >
+                            GPU {idx}
+                          </span>
+                          <span className="text-zinc-200 font-semibold">{gpu.name}</span>
+                          {gpu.name.includes('5080') && (
+                            <span className="bg-emerald-400/20 text-emerald-300 text-[9px] px-1.5 py-0.5 rounded font-bold uppercase">
+                              New Gen
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3 text-zinc-500 text-[10px] font-mono">
+                          {gpu.pcieSlot && <span>{gpu.pcieSlot}</span>}
+                          {gpu.driverVersion && <span>{gpu.driverVersion}</span>}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2 pt-1 text-zinc-300 bg-zinc-950/60 p-3 rounded-xl border border-zinc-800/80">
+                        <div>
+                          <span className="text-zinc-500 block text-[9px] font-bold">VRAM ALLOCATION</span>
+                          <span className="text-zinc-200 font-bold">
+                            {(gpu.vramUsedMb / 1024).toFixed(1)} / {(gpu.vramTotalMb / 1024).toFixed(1)} GB
+                          </span>
+                          <span className="text-[10px] text-zinc-500 block mt-0.5">
+                            {Math.round((gpu.vramUsedMb / gpu.vramTotalMb) * 100)}% utilized
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-zinc-500 block text-[9px] font-bold">THERMALS</span>
+                          <span className="text-zinc-200 font-bold">{gpu.tempC}°C</span>
+                          <span className="text-[10px] text-zinc-500 block mt-0.5">
+                            {gpu.clockMhz ? `${gpu.clockMhz} MHz` : 'Normal'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-zinc-500 block text-[9px] font-bold">POWER & UTIL</span>
+                          <span className="text-zinc-200 font-bold">{gpu.powerW} W</span>
+                          <span className="text-[10px] text-zinc-500 block mt-0.5">
+                            {gpu.utilPercent}% core load
+                          </span>
+                        </div>
+                      </div>
+
+                      {gpu.activeWorkload && (
+                        <div className="text-[10px] font-mono text-zinc-400 bg-zinc-950/40 px-2.5 py-1 rounded-lg border border-zinc-800/50 flex items-center justify-between">
+                          <span className="text-zinc-500">Active Workload:</span>
+                          <span className="text-zinc-300 font-medium">{gpu.activeWorkload}</span>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className="bg-zinc-900/50 p-4 rounded-2xl border border-blue-900/40 space-y-2.5 backdrop-blur-md">
+                    <div className="flex items-center justify-between">
+                      <span className="text-blue-400 font-bold uppercase tracking-wider text-[11px]">
+                        NVIDIA GPU Telemetry
+                      </span>
+                      <span className="text-zinc-300 font-medium">{host.gpuName || 'GeForce RTX 4090'}</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 pt-1 text-zinc-300 bg-zinc-950/60 p-3 rounded-xl border border-zinc-800/80">
+                      <div>
+                        <span className="text-zinc-500 block text-[9px] font-bold">VRAM USAGE</span>
+                        <span className="text-zinc-200">
+                          {host.gpuVramUsedMb || 844} MB / {host.gpuVramTotalMb || 24576} MB
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-zinc-500 block text-[9px] font-bold">TEMPERATURE</span>
+                        <span className="text-zinc-200">{host.gpuTempC || 40}°C</span>
+                      </div>
+                      <div>
+                        <span className="text-zinc-500 block text-[9px] font-bold">POWER BURN</span>
+                        <span className="text-zinc-200">{host.gpuPowerW || 37} W</span>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-zinc-500 block text-[9px] font-bold">TEMPERATURE</span>
-                    <span className="text-zinc-200">{host.gpuTempC || 40}°C</span>
-                  </div>
-                  <div>
-                    <span className="text-zinc-500 block text-[9px] font-bold">POWER BURN</span>
-                    <span className="text-zinc-200">{host.gpuPowerW || 37} W</span>
-                  </div>
-                </div>
+                )}
               </div>
             )}
           </div>
